@@ -185,7 +185,7 @@ class Db
      * @param string $sqlEnd SQL string appended at the end of the query. For example 'ORDER BY `createdAt` DESC'
      * @return array
      */
-    public function selectAll($table, $columns, $where = array(), $sqlEnd = '',$join='', $joinWhere='')
+   public function selectAll($table, $columns, $where = array(), $sqlEnd = '',$join='',$joinConnectField='', $joinWhere='')
     {
 
         if (is_array($columns)) {
@@ -216,7 +216,7 @@ class Db
             } else {
                 $joinWhereResults .= '';
             }
-              $sql .= ' JOIN '. ipTable($join) . ' WHERE '.ipTable($table).'.`id` = '. ipTable($join).'.'.ipTable($table.'_id').' AND '. $joinWhereResults.' AND';
+              $sql .= ' JOIN '. ipTable($join) . ' WHERE '.ipTable($table).'.`id` = '. ipTable($join).'.'.$joinConnectField.' AND '. $joinWhereResults.' AND';
          }else {
 
             $sql .= ' WHERE ';
@@ -259,9 +259,9 @@ class Db
      * @param string $sqlEnd SQL string appended at the end of the query. For example 'ORDER BY `createdAt` DESC'
      * @return array|null
      */
-    public function selectRow($table, $columns, $where,  $sqlEnd = '',$join='', $joinWhere='')
+    public function selectRow($table, $columns, $where,  $sqlEnd = '',$join='',$joinConnectField = '', $joinWhere='')
     {
-        $result = $this->selectAll($table, $columns, $where, $sqlEnd, $join='', $joinWhere='' . ' LIMIT 1');
+        $result = $this->selectAll($table, $columns, $where, $sqlEnd, $join='',$joinConnectField = '', $joinWhere='' . ' LIMIT 1');
         return $result ? $result[0] : null;
     }
 
@@ -276,11 +276,12 @@ class Db
      * @param string $sqlEnd SQL string appended at the end of the query. For example 'ORDER BY `createdAt` DESC'
      * @return mixed|null
      */
-    public function selectValue($table, $column, $where, $sqlEnd = '',$join='', $joinWhere='')
+    public function selectValue($table, $column, $where, $sqlEnd = '',$join='', $joinConnectField = '', $joinWhere='')
     {
-        $result = $this->selectAll($table, $column, $where, $sqlEnd, $join='', $joinWhere='' . ' LIMIT 1');
+        $result = $this->selectAll($table, $column, $where, $sqlEnd, $join='',$joinConnectField = '', $joinWhere='' . ' LIMIT 1');
         return $result ? array_shift($result[0]) : null;
     }
+
     public function selectColumn($table, $column, $where, $sqlEnd = '')
     {
         $sql = 'SELECT ' . $column . ' FROM ' . ipTable($table);
