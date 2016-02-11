@@ -175,8 +175,8 @@ class Db
             throw new \Ip\Exception\Db($e->getMessage(), $e->getCode(), $e);
         }
     }
-
-    /**
+ 
+   /**
      * Execute SELECT query on specified table and return array with results
      *
      * @param string $table Table name without prefix
@@ -185,8 +185,9 @@ class Db
      * @param string $sqlEnd SQL string appended at the end of the query. For example 'ORDER BY `createdAt` DESC'
      * @return array
      */
-    public function selectAll($table, $columns, $where = array(), $sqlEnd = '')
+    public function selectAll($table, $columns, $where = array(), $sqlEnd = '',$join='', $joinWhere='')
     {
+
         if (is_array($columns)) {
             $columns = '`' . implode('`,`', $columns) . '`';
         }
@@ -194,16 +195,44 @@ class Db
         $sql = 'SELECT ' . $columns . ' FROM ' . ipTable($table);
 
         $params = array();
-        $sql .= ' WHERE ';
-        if ($where) {
-            foreach ($where as $column => $value) {
-                if ($value === null) {
-                    $sql .= "`{$column}` IS NULL AND ";
+
+        if($join){
+                  if ($joinWhere) {
+                    $joinWhereResults ="";
+            foreach ($joinWhere as $column => $value) {
+                 if ($value === null) {
+                    $joinWhereResults .= ipTable($join).".`{$column}` IS NULL AND ";
                 } else {
                     if (is_bool($value)) {
                         $value = $value ? 1 : 0;
                     }
-                    $sql .= "`{$column}` = ? AND ";
+                     $joinWhereResults .= ipTable($join).".`{$column}` = '{$value}' AND ";
+
+                    //$joinParams[] = $value;
+                }
+            }
+           
+                 $joinWhereResults = substr($joinWhereResults, 0, -4);
+            } else {
+                $joinWhereResults .= '';
+            }
+              $sql .= ' JOIN '. ipTable($join) . ' WHERE '.ipTable($table).'.`id` = '. ipTable($join).'.'.ipTable($table.'_id').' AND '. $joinWhereResults.' AND';
+         }else {
+
+            $sql .= ' WHERE ';
+
+        }
+
+        if ($where) {
+
+            foreach ($where as $column => $value) {
+                if ($value === null) {
+                    $sql .= ipTable($table).".`{$column}` IS NULL AND ";
+                } else {
+                    if (is_bool($value)) {
+                        $value = $value ? 1 : 0;
+                    }
+                    $sql .= ipTable($table).".`{$column}` = ? AND ";
                     $params[] = $value;
                 }
             }
@@ -212,12 +241,12 @@ class Db
         } else {
             $sql .= ' 1 ';
         }
-
+  
         if ($sqlEnd) {
             $sql .= $sqlEnd;
         }
-
-        return $this->fetchAll($sql, $params);
+       //echo($sql);
+          return $this->fetchAll($sql, $params);
     }
 
     /**
@@ -230,9 +259,9 @@ class Db
      * @param string $sqlEnd SQL string appended at the end of the query. For example 'ORDER BY `createdAt` DESC'
      * @return array|null
      */
-    public function selectRow($table, $columns, $where, $sqlEnd = '')
+    public function selectRow($table, $columns, $where,  $sqlEnd = '',$join='', $joinWhere='')
     {
-        $result = $this->selectAll($table, $columns, $where, $sqlEnd . ' LIMIT 1');
+        $result = $this->selectAll($table, $columns, $where, $sqlEnd, $join='', $joinWhere='' . ' LIMIT 1');
         return $result ? $result[0] : null;
     }
 
@@ -247,12 +276,11 @@ class Db
      * @param string $sqlEnd SQL string appended at the end of the query. For example 'ORDER BY `createdAt` DESC'
      * @return mixed|null
      */
-    public function selectValue($table, $column, $where, $sqlEnd = '')
+    public function selectValue($table, $column, $where, $sqlEnd = '',$join='', $joinWhere='')
     {
-        $result = $this->selectAll($table, $column, $where, $sqlEnd . ' LIMIT 1');
+        $result = $this->selectAll($table, $column, $where, $sqlEnd, $join='', $joinWhere='' . ' LIMIT 1');
         return $result ? array_shift($result[0]) : null;
     }
-
     public function selectColumn($table, $column, $where, $sqlEnd = '')
     {
         $sql = 'SELECT ' . $column . ' FROM ' . ipTable($table);
